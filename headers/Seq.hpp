@@ -1,60 +1,81 @@
+#pragma once
 #include "def.hpp"
+
+//TODO: 异常处理
 
 class Seq
 {
-
 public:
-    Seq(byte* instruction_mem_pointer,byte* mem_pointer,size_t mem_size)
+    /// @brief 提供如下内容以供构造
+    /// @param instruction_mem_pointer 指令内存指针
+    /// @param mem_pointer 内存指针
+    /// @param mem_size 内存大小
+    Seq(Byte* instruction_mem_pointer,Byte* mem_pointer,size_t mem_size)
     {
         iMem=instruction_mem_pointer;
         mem=mem_pointer;memSize=memSize;
     }
 
 private:
-    static constexpr int RFN = 15;
+    static constexpr size_t RFN = 15;
     enum {RAX,RCX,RDX,RBX,RSP,RBP,RSI,RDI,R8,R9,R10,R11,R12,R13,R14,NO_REGISTER};
 
-    static constexpr int CCN = 3;
+    static constexpr size_t CCN = 3;
     enum {ZF,SF,OF};
 
-    static constexpr int INSTRUCTIONN=12;
-    enum {HALT,NOP,RRMOVQ,IRMOVQ,RMMOVQ,MRMOVQ,OPQ,JXX,CMOVXX,CALL,RET,PUSHQ,POPQ};
+    static constexpr size_t INSTRUCTIONN=12;
+    enum {HALT,NOP,RRMOVQ,IRMOVQ,RMMOVQ,MRMOVQ,OPQ,JXX,CMOVXX=2,CALL=8,RET,PUSHQ,POPQ};
 
-    byte icode; //指令类型byte
-    byte ifun; //指令功能说明byte
-    byte rA; //寄存器指定byte A
-    byte rB; //寄存器指定byte B
-    dword valC;
-    dword valP;
-    dword valA;
-    dword valB;
-    dword desE;
-    dword desM;
-    dword srcA;
-    dword secB;
-    byte cnd;
-    dword valE;
-    dword valM;
-    dword stat;
-    int pc=0;
-    int newPc;
+    /// @brief 充当类内namespace
+    struct FN{
+        FN()=delete;
+        static constexpr size_t OPN = 4;
+        enum {ADDQ,SUBQ,ANDQ,XORQ};
 
-    dword RF[RFN]; //Register File
+        static constexpr size_t BRANCHN = 7;
+        enum {JMP,JLE,JL,JE,JNE,JGE,JG};
+
+        static constexpr size_t MOVEN = 7;
+        enum {RRMOVQ,CMOVLE,CMOVL,CMOVE,CMOVNE,CMOVGE,CMOVG};
+    };
+
+    /// @brief iMEM+pc
+    struct _INS{
+        Seq const* object=reinterpret_cast<Seq const*>((Byte const*)(this)-offsetof(Seq,INS));
+        operator const Byte*() const;
+    }
+    INS; 
+
+    Byte icode; //指令类型byte
+    Byte ifun; //指令功能说明byte
+    Byte rA; //寄存器指定byte A
+    Byte rB; //寄存器指定byte B
+    Qword valC;
+    size_t valP;
+    Qword valA;
+    Qword valB;
+    Qword desE;
+    Qword desM;
+    Qword srcA;
+    Qword secB;
+    Byte cnd;
+    Qword valE;
+    Qword valM;
+    Qword stat;
+    size_t pc=0;
+    size_t newPc;
+ 
+    Qword RF[RFN]; //Register File
     bool CC[CCN]; //Conditional Codes
 
-    byte* mem=nullptr;
-    byte* iMem=nullptr;
+    Byte* mem=nullptr;
+    Byte* iMem=nullptr;
     size_t memSize=0;
 
 private:
-    /// @brief 查看mem的一个dword
-    /// @param pos 从pos查看8个byte 
-    /// @return 这8个byte组成的dword，little endian
-    dword peekMem(size_t pos) const;
+    void fetch();
 
-    /// @brief 查看下一个iCode
-    /// @return 下一个iCode
-    byte peekIns() const;
+    void decode();
 
-    
+    void excute();
 };
