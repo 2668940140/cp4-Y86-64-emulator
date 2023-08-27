@@ -70,11 +70,17 @@ private:
     size_t memSize=0;
 
 private:
-    void fetch();
+    void fetchStage();
 
-    void decode();
+    void decodeStage();
 
-    void excute();
+    void excuteStage();
+
+    void memoryStage();
+
+    void writebackStage();
+
+    void pcUpdateStage();
 
     /// @brief //根据ifun CC 设置执行条件cnd
     void setCnd(); 

@@ -1,10 +1,10 @@
 #include "Seq.hpp"
 #include "utilities.hpp"
 
-void Seq::fetch()
+void Seq::fetchStage()
 {
     //TODO:检测是否合法
-    std::tie(icode,ifun)=peekTwoHex(INS);
+    std::tie(icode,ifun)=readTwoHex(INS);
 
     switch(icode)
     {
@@ -12,16 +12,16 @@ void Seq::fetch()
         case RMMOVQ:
         case MRMOVQ:
         case OPQ:
-        std::tie(rA,rB)=peekTwoHex(INS+1);
+        std::tie(rA,rB)=readTwoHex(INS+1);
         break;
 
         case PUSHQ:
         case POPQ:
-        rA=peekHex(INS+1);
+        rA=readHex(INS+1);
         break;
 
         case IRMOVQ:
-        rB=peekHex(INS+1,1);
+        rB=readHex(INS+1,1);
         break;
     }
 
@@ -30,12 +30,12 @@ void Seq::fetch()
         case IRMOVQ:
         case RMMOVQ:
         case MRMOVQ:
-        valC=peekQword(INS,2);
+        valC=readQword(INS,2);
         break;
         
         case JXX:
         case CALL:
-        valC=peekQword(INS,1);
+        valC=readQword(INS,1);
         break;
     }
 
@@ -67,7 +67,7 @@ void Seq::fetch()
     }
 }
 
-void Seq::decode()
+void Seq::decodeStage()
 {
     switch(icode)
     {
@@ -100,10 +100,8 @@ void Seq::decode()
     }
 }
 
-void Seq::excute()
+void Seq::excuteStage()
 {
-
-
     switch(icode)
     {
         case HALT:
@@ -144,6 +142,112 @@ void Seq::excute()
         case RET:
         case POPQ:
         valE=valB+8;
+        break;
+    }
+}
+
+void Seq::memoryStage()
+{
+    switch(icode)
+    {
+        case HALT:
+        //TODO
+        break;
+
+        case NOP:
+        case CMOVXX:
+        case IRMOVQ:
+        case OPQ:
+        case JXX:
+        //pass
+        break;
+
+
+        case RMMOVQ:
+        case PUSHQ:
+        write(mem,valA,valE);
+        break;
+
+        case MRMOVQ:
+        valM=readQword(mem,valE);
+        break;
+
+        case POPQ:
+        case RET:
+        valM=readQword(mem,valA);
+        break;
+
+        case CALL:
+        write(mem,valP,valE);
+        break;
+    }
+}
+
+void Seq::writebackStage()
+{
+    switch(icode)
+    {
+        case HALT:
+        //TODO
+        break;
+
+        case NOP:
+        case RMMOVQ:
+        case JXX:
+        //pass
+        break;
+
+        case CMOVXX:
+        if(cnd) RF[rB]=valE;
+        break;
+
+        case IRMOVQ:
+        case OPQ:
+        RF[rB]=valE;
+        break;
+
+        case PUSHQ:
+        case CALL:
+        case RET:
+        RF[RSP]=valE;
+        break;
+
+        case MRMOVQ:
+        RF[rA]=valM;
+        break;
+
+        case POPQ:
+        RF[RSP]=valE;
+        RF[rA]=valM;
+        break;
+    }
+}
+
+void Seq::pcUpdateStage()
+{
+    switch(icode)
+    {
+        case HALT:
+        //TODO
+        break;
+
+        case NOP:
+        case RMMOVQ:
+        case CMOVXX:
+        case IRMOVQ:
+        case OPQ:
+        case PUSHQ:
+        case CALL:
+        case POPQ:
+        pc=valP;
+        break;
+
+        case JXX:
+        pc=cnd?valC:valP;
+        break;
+
+        case RET:
+        pc=valM;
         break;
     }
 }
