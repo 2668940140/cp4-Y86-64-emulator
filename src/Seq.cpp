@@ -105,7 +105,7 @@ void Seq::excuteStage()
     switch(icode)
     {
         case HALT:
-        //TODO
+        stat=HLT;
         break;
 
         case NOP:
@@ -151,9 +151,6 @@ void Seq::memoryStage()
     switch(icode)
     {
         case HALT:
-        //TODO
-        break;
-
         case NOP:
         case CMOVXX:
         case IRMOVQ:
@@ -188,9 +185,6 @@ void Seq::writebackStage()
     switch(icode)
     {
         case HALT:
-        //TODO
-        break;
-
         case NOP:
         case RMMOVQ:
         case JXX:
@@ -228,9 +222,6 @@ void Seq::pcUpdateStage()
     switch(icode)
     {
         case HALT:
-        //TODO
-        break;
-
         case NOP:
         case RMMOVQ:
         case CMOVXX:
@@ -329,10 +320,10 @@ Qword Seq::op(Qword x, Qword y)
     return ret;
 }
 
-size_t Seq::run()
+Byte Seq::run()
 {
     //TODO STAT
-    while (1)
+    while (stat==AOK)
     {
         fetchStage();
         cycle++;
@@ -349,7 +340,7 @@ size_t Seq::run()
         pcUpdateStage();
         cycle++;
     }
-    return cycle;
+    return stat;
 }
 
 Seq::_INS::operator const Byte *() const

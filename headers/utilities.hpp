@@ -27,6 +27,9 @@ std::tuple<Byte,Byte> readTwoHex(Byte const* p);
 /// @brief 在p[pos]处写入一个Qword
 void write(Byte* p,Qword word,size_t pos=0);
 
-
 /// @brief 在p[pos]处写入一个Byte
 void write(Byte* p,Byte word,size_t pos=0);
+
+/// @brief 组合hex1的前4位和hex2的前四位
+/// @return 一个字节
+Byte combine(Byte hex1,Byte hex2=0);

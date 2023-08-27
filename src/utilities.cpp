@@ -30,3 +30,8 @@ void write(Byte *p, Byte word,size_t pos)
 {
     p[pos]=word;
 }
+
+Byte combine(Byte hex1, Byte hex2)
+{
+    return (hex1&0xf)|(hex2&0xf)<<4;
+}
