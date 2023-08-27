@@ -63,11 +63,13 @@ private:
     size_t newPc;
  
     Qword RF[RFN]; //Register File
-    bool CC[CCN]; //Conditional Codes
+    bool CC[CCN]{1,0,0}; //Conditional Codes
 
     Byte* mem=nullptr;
     Byte* iMem=nullptr;
     size_t memSize=0;
+
+    size_t cycle=0;
 
 private:
     void fetchStage();
@@ -89,6 +91,9 @@ private:
     /// @param x valB
     /// @param y valA
     Qword op(Qword x,Qword y);
+
+    /// @return 运行结束时的cycle
+    size_t run();
 
 
 };

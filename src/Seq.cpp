@@ -329,6 +329,29 @@ Qword Seq::op(Qword x, Qword y)
     return ret;
 }
 
+size_t Seq::run()
+{
+    //TODO STAT
+    while (1)
+    {
+        fetchStage();
+        cycle++;
+
+        decodeStage();
+        cycle++;
+
+        excuteStage();
+        cycle++;
+
+        memoryStage();
+        cycle++;
+
+        pcUpdateStage();
+        cycle++;
+    }
+    return cycle;
+}
+
 Seq::_INS::operator const Byte *() const
 {
     return object->iMem+object->pc;
