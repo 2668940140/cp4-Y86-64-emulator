@@ -33,10 +33,7 @@ private:
         enum {ADDQ,SUBQ,ANDQ,XORQ};
 
         static constexpr size_t BRANCHN = 7;
-        enum {JMP,JLE,JL,JE,JNE,JGE,JG};
-
-        static constexpr size_t MOVEN = 7;
-        enum {RRMOVQ,CMOVLE,CMOVL,CMOVE,CMOVNE,CMOVGE,CMOVG};
+        enum {TRUE,LE,L,E,NE,GE,G};
     };
 
     /// @brief iMEM+pc
@@ -58,7 +55,7 @@ private:
     Qword desM;
     Qword srcA;
     Qword secB;
-    Byte cnd;
+    bool cnd; //执行条件
     Qword valE;
     Qword valM;
     Qword stat;
@@ -78,4 +75,14 @@ private:
     void decode();
 
     void excute();
+
+    /// @brief //根据ifun CC 设置执行条件cnd
+    void setCnd(); 
+
+    /// @brief 根据ifun对x,y计算并返回结果,同时设置CC,计算为X op Y,
+    /// @param x valB
+    /// @param y valA
+    Qword op(Qword x,Qword y);
+
+
 };

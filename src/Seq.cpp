@@ -5,6 +5,7 @@ void Seq::fetch()
 {
     //TODO:检测是否合法
     std::tie(icode,ifun)=peekTwoHex(INS);
+
     switch(icode)
     {
         case CMOVXX:
@@ -102,6 +103,126 @@ void Seq::decode()
 void Seq::excute()
 {
 
+
+    switch(icode)
+    {
+        case HALT:
+        //TODO
+        break;
+
+        case NOP:
+        //pass
+        break;
+
+        case CMOVXX:
+        valE=valA;
+        setCnd();
+        break;
+
+        case IRMOVQ:
+        valE=valC;
+        break;
+
+        case RMMOVQ:
+        case MRMOVQ:
+        valE=valB+valC;
+        break;
+
+        case OPQ:
+        valE=op(valB,valA);
+        break;
+
+        case JXX:
+        setCnd();
+        break;
+
+        case CALL:
+        case PUSHQ:
+        valE=valB-8;
+        break;
+
+        case RET:
+        case POPQ:
+        valE=valB+8;
+        break;
+    }
+}
+
+void Seq::setCnd()
+{
+    //CMOVXX和JXX的条件是相同的,可以通用
+    switch(ifun)
+    {
+        case FN::TRUE:
+        cnd=true;
+        break;
+
+        case FN::LE:
+        cnd=CC[SF]^CC[OF]|CC[ZF];
+        break;
+
+        case FN::L:
+        cnd=CC[SF]^CC[OF];
+        break;
+
+        case FN::E:
+        cnd=CC[ZF];
+        break;
+
+        case FN::NE:
+        cnd=~CC[ZF];
+        break;
+
+        case FN::GE:
+        cnd=~(CC[SF]^CC[OF]);
+        break;
+
+        case FN::G:
+        cnd=~(CC[SF]^CC[OF])&~CC[ZF];
+        break;
+    }
+}
+
+Qword Seq::op(Qword x, Qword y)
+{
+    Qword ret;
+    switch(ifun)
+    {
+        case FN::ADDQ:
+        ret=x+y;
+        break;
+
+        case FN::SUBQ:
+        ret=x-y;
+        break;
+
+        case FN::ANDQ:
+        ret=x&y;
+        break;
+
+        case FN::XORQ:
+        ret=x^y;
+        break;
+    }
+
+    CC[ZF]=!ret;
+    CC[SF]=ret>>sizeof(Qword)*8-1;
+    switch(ifun)
+    {
+        case FN::ADDQ:
+        CC[OF]=ret<x;
+        break;
+        case FN::SUBQ:
+        CC[OF]=ret>x;
+        break;
+
+        case FN::ANDQ:
+        case FN::XORQ:
+        CC[OF]=false;
+        break;
+    }
+    
+    return ret;
 }
 
 Seq::_INS::operator const Byte *() const
