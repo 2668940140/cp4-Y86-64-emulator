@@ -35,3 +35,18 @@ Byte combine(Byte hex1, Byte hex2)
 {
     return (hex1&0xf)|(hex2&0xf)<<4;
 }
+
+Dword strToUll(std::string _str)
+{
+    // TODO:检测数字是否dword存不下,或者格式不对
+    if (_str.empty())
+        return 0;
+    else if (_str.size() >= 2 && _str.substr(0, 2) == "0x")
+    {
+        return std::stoull(_str, 0, 16);
+    }
+    else
+    {
+        return std::stoull(_str, 0, 10);
+    }
+}

@@ -16,3 +16,7 @@ add_executable(assembler
     src/utilities.cpp
 )
 
+project(testcpp VERSION 0.1.0 LANGUAGES C CXX)
+add_executable(testcpp
+    tmp/test.cpp
+)

@@ -1,5 +1,6 @@
 #pragma once
 #include "def.hpp"
+#include <string>
 #include <tuple>
 
 /// @brief 按照little endian返回p[pos]表示的整数qword
@@ -33,3 +34,7 @@ void write(Byte* p,Byte word,size_t pos=0);
 /// @brief 组合hex1的前4位和hex2的前四位
 /// @return 一个字节
 Byte combine(Byte hex1,Byte hex2=0);
+
+/// @brief 将_str转换为dword储存在_num,0x开头为16进制,否则为十进制
+/// @return 结果
+Dword strToUll(std::string _str);
