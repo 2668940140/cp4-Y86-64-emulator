@@ -10,12 +10,10 @@ public:
     /// @param instruction_mem_pointer 指令内存指针
     /// @param mem_pointer 内存指针
     /// @param mem_size 内存大小
-    Seq(Byte *instruction_mem_pointer, Byte *mem_pointer, size_t mem_size)
-    {
-        iMem = instruction_mem_pointer;
-        mem = mem_pointer;
-        memSize = memSize;
-    }
+    Seq(Byte *instruction_mem_pointer, Byte *mem_pointer, size_t mem_size);
+
+    /// @return 运行结束时的stat
+    Byte run();
 
 private:
     /// @brief iMEM+pc
@@ -73,7 +71,4 @@ private:
     /// @param x valB
     /// @param y valA
     Qword op(Qword x, Qword y);
-
-    /// @return 运行结束时的stat
-    Byte run();
 };

@@ -3,8 +3,6 @@
 #include "def.hpp"
 #include <iostream>
 
-
-//TODO:label
 class _Assembler: StateDef
 {
     public:

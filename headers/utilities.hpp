@@ -38,3 +38,7 @@ Byte combine(Byte hex1,Byte hex2=0);
 /// @brief 将_str转换为dword储存在_num,0x开头为16进制,否则为十进制
 /// @return 结果
 Dword strToUll(std::string _str);
+
+/// @brief 将一个ull转换为0x开头的小写hex
+/// @return 结果
+std::string ullToHex(Dword _num);

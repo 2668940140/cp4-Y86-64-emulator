@@ -1,4 +1,5 @@
 #include "utilities.hpp"
+#include <sstream>
 
 Qword readQword(Byte const* p,size_t pos)
 {
@@ -12,13 +13,13 @@ Byte readByte(Byte const* p, size_t pos)
 
 Byte readHex(Byte const *p, size_t pos)
 {
-    return p[pos/2]&(0xf<<(pos%2>>4));
+    return (p[pos/2]&(0xf<<((pos+1)%2*4)))>>(pos+1)%2*4;
 }
 
 std::tuple<Byte, Byte> readTwoHex(Byte const *p)
 {
     Byte byte=readByte(p);
-    return std::make_tuple(byte%0xf,byte&0x0f);
+    return std::make_tuple((byte&0xf0)>>4,byte&0x0f);
 }
 
 void write(Byte *p, Qword word,size_t pos)
@@ -33,7 +34,7 @@ void write(Byte *p, Byte word,size_t pos)
 
 Byte combine(Byte hex1, Byte hex2)
 {
-    return (hex1&0xf)|(hex2&0xf)<<4;
+    return (hex1&0xf)<<4|(hex2&0xf);
 }
 
 Dword strToUll(std::string _str)
@@ -49,4 +50,12 @@ Dword strToUll(std::string _str)
     {
         return std::stoull(_str, 0, 10);
     }
+}
+
+std::string ullToHex(Dword _num)
+{
+    static std::stringstream ss;
+    ss.clear();ss.str("");
+    ss<<"0x"<<std::hex<<_num;
+    return ss.str();
 }

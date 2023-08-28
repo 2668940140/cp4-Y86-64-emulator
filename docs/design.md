@@ -48,5 +48,7 @@ conditional op(jump/mov etc.);
 4. Memory:
 wirte mem/read mem to val M;
 
-5. PC update
+5. Write back:
+write register file
+6. PC update
 ![[Pasted image 20230826153238.png]]

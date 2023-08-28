@@ -226,11 +226,15 @@ void Seq::pcUpdateStage()
         case RMMOVQ:
         case CMOVXX:
         case IRMOVQ:
+        case MRMOVQ:
         case OPQ:
         case PUSHQ:
-        case CALL:
         case POPQ:
         pc=valP;
+        break;
+
+        case CALL:
+        pc=valC;
         break;
 
         case JXX:
@@ -320,6 +324,13 @@ Qword Seq::op(Qword x, Qword y)
     return ret;
 }
 
+Seq::Seq(Byte *instruction_mem_pointer, Byte *mem_pointer, size_t mem_size)
+{
+        iMem = instruction_mem_pointer;
+        mem = mem_pointer;
+        memSize = memSize;
+}
+
 Byte Seq::run()
 {
     //TODO STAT
@@ -335,6 +346,9 @@ Byte Seq::run()
         cycle++;
 
         memoryStage();
+        cycle++;
+
+        writebackStage();
         cycle++;
 
         pcUpdateStage();
