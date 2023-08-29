@@ -52,3 +52,11 @@ build/Testing/Temporary/LastTestsFailed_20230829-0512.log
 build/test/assemblerSeqDoFibTest
 .vscode/settings.json
 build/.cmake/api/v1/reply/index-2023-08-29T07-34-43-0371.json
+build/assemblerSeqDoFibTest
+build/.cmake/api/v1/reply/cache-v2-0c04017dec004c9cb13f.json
+build/.cmake/api/v1/reply/codemodel-v2-f7f83ff4c4eea80cdae0.json
+build/.cmake/api/v1/reply/index-2023-08-29T07-44-46-0425.json
+build/.cmake/api/v1/reply/target-assemblerSeqDoFibTest-Debug-27ea090fc0599cb5e8ba.json
+build/.cmake/api/v1/reply/target-testcpp-Debug-c3adec97f819f5c3d2ba.json
+build/Testing/20230829-0742/Test.xml
+build/Testing/Temporary/LastTest_20230829-0742.log
