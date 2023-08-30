@@ -1,8 +1,7 @@
 #pragma once
 #include "def.hpp"
 
-// TODO: 异常处理
-
+// TODO: 异常处理:指令合法检测，使用的内存合法检测
 class Seq : public StateDef
 {
 public:

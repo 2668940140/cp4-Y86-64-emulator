@@ -3,14 +3,14 @@ enable_testing()
 
 project(testcpp VERSION 0.1.0 LANGUAGES C CXX)
 add_executable(testcpp
-    src/test.cpp
+    src/test/test.cpp
 )
 
 project(assemblerSeqDoFibTest LANGUAGES C CXX)
 add_compile_options(-g)
 include_directories(assemblerSeqDoFibTest headers)
 add_executable(assemblerSeqDoFibTest 
-src/test1.cpp
+src/test/test1.cpp
 src/Seq.cpp
 src/utilities.cpp
 src/Asm.cpp
