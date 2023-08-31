@@ -1,6 +1,6 @@
 #include "Seq.hpp"
 #include "utilities.hpp"
-
+using namespace Utl;
 void Seq::fetchStage()
 {
     //TODO:检测是否合法
@@ -127,7 +127,7 @@ void Seq::excuteStage()
         break;
 
         case OPQ:
-        valE=op(valB,valA);
+        valE=ALU(valB,valA);
         break;
 
         case JXX:
@@ -264,7 +264,7 @@ void Seq::setCnd()
         cnd=CC[SF]^CC[OF];
         break;
 
-        case FN::E:
+        case FN::EQ:
         cnd=CC[ZF];
         break;
 
@@ -282,7 +282,7 @@ void Seq::setCnd()
     }
 }
 
-Qword Seq::op(Qword x, Qword y)
+Qword Seq::ALU(Qword x, Qword y)
 {
     Qword ret;
     switch(ifun)

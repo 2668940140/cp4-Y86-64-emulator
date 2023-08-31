@@ -1,5 +1,6 @@
 #include "Seq.hpp"
 #include "Asm.hpp"
+#include "utilities.hpp"
 #include <sstream>
 #include <fstream>
 
@@ -42,6 +43,7 @@ Byte Ins[SIZE];
 Seq seq(Ins,Mem,SIZE);
 
 using namespace std;
+using namespace Utl;
 
 Qword function(Qword x)
 {

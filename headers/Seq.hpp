@@ -66,8 +66,8 @@ private:
     /// @brief //根据ifun CC 设置执行条件cnd
     void setCnd();
 
-    /// @brief 根据ifun对x,y计算并返回结果,同时设置CC,计算为X op Y,
+    /// @brief 根据ifun对x,y计算并返回结果,同时设置CC,计算为X ALU Y,
     /// @param x valB
     /// @param y valA
-    Qword op(Qword x, Qword y);
+    Qword ALU(Qword x, Qword y);
 };

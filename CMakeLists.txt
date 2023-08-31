@@ -16,3 +16,11 @@ src/utilities.cpp
 src/Asm.cpp
 )
 add_test(NAME assemblerSeqDoFibTest COMMAND assemblerSeqDoFibTest 10)  #计算fib10，注意采用全递归，测试数太大可能爆栈
+
+project(pipeTest LANGUAGES C CXX)
+include_directories(pipeTest headers)
+add_executable(pipeTest
+src/utilities.cpp
+src/pipeTest.cpp
+src/Pipe.cpp
+)

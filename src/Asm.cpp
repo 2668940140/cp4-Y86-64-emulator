@@ -1,4 +1,5 @@
 #include "Asm.hpp"
+#include "utilities.hpp"
 #include <regex>
 #include <string>
 #include <sstream>
@@ -8,117 +9,14 @@
 #include <vector>
 #include <cstring>
 
-std::unordered_map<std::string,Byte> MAP;
-std::unordered_map<std::string,size_t> SIZEOF;
-std::set<std::string> RARB_SET{"rrmovq","cmovle","cmovl","cmove","cmovne","cmovge","cmovg","addq","subq","andq","xorq"};
-std::set<std::string> VRB_SET{"irmovq"};
-std::set<std::string> RADRB_SET{"rmmovq"};
-std::set<std::string> DRBRA_SET{"mrmovq"};
-std::set<std::string> D_SET{"call","jmp","jle","jl","je","jne","jge","jg"};
-std::set<std::string> RA_SET{"pushq","popq"};
-std::set<std::string> NONE_SET{"halt","nop","ret"};
-std::set<std::string> REG_SET{"rax","rcx","rdx","rbx","rsp","rbp","rsi","rdi","r8","r9","r10","r11","r12","r13","r14"};
-std::set<std::string> INS_SET{"rrmovq","cmovle","cmovl","cmove","cmovne","cmovge","cmovg","addq","subq","andq","xorq","irmovq","rmmovq","mrmovq",
-"call","jmp","jle","jl","je","jne","jge","jg","pushq","popq","halt","nop","ret"};
-
-
+using namespace StrMapSpace;
+using namespace Utl;
 struct Instruction
 {
     std::string ins;
     std::string detail;
     size_t offset=0;
 };
-
-
-struct Init:StateDef
-{
-    static bool initilizedQ;//static默认是0
-    void operator()()
-    {
-        initilizedQ=true;
-        //对于指令是1byte的信息
-        MAP["halt"]=combine(HALT);
-        MAP["nop"]=combine(NOP);
-        MAP["rrmovq"]=combine(CMOVXX,FN::TRUE);
-        MAP["cmovle"]=combine(CMOVXX,FN::LE);
-        MAP["cmovl"]=combine(CMOVXX,FN::L);
-        MAP["cmove"]=combine(CMOVXX,FN::E);
-        MAP["cmovne"]=combine(CMOVXX,FN::NE);
-        MAP["cmovge"]=combine(CMOVXX,FN::GE);
-        MAP["cmovg"]=combine(CMOVXX,FN::G);
-        MAP["irmovq"]=combine(IRMOVQ);
-        MAP["rmmovq"]=combine(RMMOVQ);
-        MAP["mrmovq"]=combine(MRMOVQ);
-        MAP["addq"]=combine(OPQ,FN::ADDQ);
-        MAP["subq"]=combine(OPQ,FN::SUBQ);
-        MAP["andq"]=combine(OPQ,FN::ANDQ);
-        MAP["xorq"]=combine(OPQ,FN::XORQ);
-        MAP["jmp"]=combine(JXX,FN::TRUE);
-        MAP["jle"]=combine(JXX,FN::LE);
-        MAP["jl"]=combine(JXX,FN::L);
-        MAP["je"]=combine(JXX,FN::E);
-        MAP["jne"]=combine(JXX,FN::NE);
-        MAP["jge"]=combine(JXX,FN::GE);
-        MAP["jg"]=combine(JXX,FN::G);
-        MAP["call"]=combine(CALL);
-        MAP["ret"]=combine(RET);
-        MAP["pushq"]=combine(PUSHQ);
-        MAP["popq"]=combine(POPQ);
-        //共27种
-
-        //对于reg specifier是4bit的信息，需要之后combine
-        MAP["rax"]=RAX;
-        MAP["rcx"]=RCX;
-        MAP["rdx"]=RDX;
-        MAP["rbx"]=RBX;
-        MAP["rsp"]=RSP;
-        MAP["rbp"]=RBP;
-        MAP["rsi"]=RSI;
-        MAP["rdi"]=RDI;
-        MAP["r8"]=R8;
-        MAP["r9"]=R9;
-        MAP["r10"]=R10;
-        MAP["r11"]=R11;
-        MAP["r12"]=R12;
-        MAP["r13"]=R13;
-        MAP["r14"]=R14;
-
-        SIZEOF["halt"]=1;
-        SIZEOF["nop"]=1;
-        SIZEOF["rrmovq"]=2;
-        SIZEOF["cmovle"]=2;
-        SIZEOF["cmovl"]=2;
-        SIZEOF["cmove"]=2;
-        SIZEOF["cmovne"]=2;
-        SIZEOF["cmovge"]=2;
-        SIZEOF["cmovg"]=2;
-        SIZEOF["irmovq"]=10;
-        SIZEOF["rmmovq"]=10;
-        SIZEOF["mrmovq"]=10;
-        SIZEOF["addq"]=2;
-        SIZEOF["subq"]=2;
-        SIZEOF["andq"]=2;
-        SIZEOF["xorq"]=2;
-        SIZEOF["jmp"]=9;
-        SIZEOF["jle"]=9;
-        SIZEOF["jl"]=9;
-        SIZEOF["je"]=9;
-        SIZEOF["jne"]=9;
-        SIZEOF["jge"]=9;
-        SIZEOF["jg"]=9;
-        SIZEOF["call"]=9;
-        SIZEOF["ret"]=1;
-        SIZEOF["pushq"]=2;
-        SIZEOF["popq"]=2;
-    }
-};
- 
-
-/// @return _str是否是合法寄存器
-bool regQ(std::string const& _str)
-{
-    return REG_SET.find(_str)!=REG_SET.end();
-}
 
 /// @brief 清除str中#开头的comment
 void cleanComment(std::string& str)
@@ -196,7 +94,6 @@ size_t parseLines(std::istream& _is,std::vector<Instruction> & lines)
     }
     return offset;
 }
-bool Init::initilizedQ;
 
 
 /// @brief 根据一行写指令，不能有label
@@ -287,8 +184,6 @@ bool writeOneLine(Instruction const& _instruction,Byte* _p)
 
 bool _Assembler::operator()(Byte *p, size_t size, std::istream &is)
 {
-    if(!Init::initilizedQ) Init()();
-
     std::vector<Instruction> lines;
     if(parseLines(is,lines)>=size) return false;
     for(auto const& line:lines)

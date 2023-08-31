@@ -82,7 +82,6 @@ pipeline每一个stage代表一个状态，vals不共享，需要传播vals耗�
 
 ## PIPE-:
 ![[Pasted image 20230829165624.png]]
-f:表示预测值
 D:取回和解码阶段过渡的缓存
 E:解码和执行阶段过渡的缓存
 M:执行和写内存阶段过渡的缓存，含条件变量
@@ -90,7 +89,7 @@ W:写内存和写寄存器阶段过渡的缓存
 
 优化:过程中valP和valA在D后用同一"valE"储存
 
-pc预测:为了循环起来，需要预测，本书采取简单的下一个pc=valP的预测方式(ret 不预测，直接stall)
+pc预测:为了循环起来，需要预测，本书采取简单的下一个pc=valP的预测方式,对于JXX相当于默认会跳(ret 不预测，直接stall)
 ### stall解决依赖问题:
 将可能受影响的stall在fetch，直到可能影响它的通过write back
 做法：给excute一个动态生成的nop(bubble)
@@ -106,6 +105,7 @@ control hazard:跑了预测错误的指令
 指令最早在excute阶段才能修改状态(CC),发现跑错了在excute插入bubble直到错误指令消失
 
 ![[Pasted image 20230830124029.png]]
+![[Pasted image 20230830145917.png]]
 # 异常处理
  内部异常:
 1. halt

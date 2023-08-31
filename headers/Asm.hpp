@@ -1,7 +1,6 @@
 #pragma once
-#include "utilities.hpp"
 #include "def.hpp"
-#include <iostream>
+#include <istream>
 
 class _Assembler: StateDef
 {
