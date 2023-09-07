@@ -1,5 +1,7 @@
 #include "Pipe.hpp"
 #include "utilities.hpp"
+#include <cassert>
+#include <cstring>
 #include <tuple>
 using std::tuple;
 using std::tie;
@@ -23,7 +25,7 @@ using namespace MCodeMapSpace;
 #define iMemSize (OB->iMemSize)
 #define RF (OB->RF)
 #define Stat (OB->Stat)
-#define INS (iMem+pc)
+#define Ins (iMem+pc)
 
 void Pipe::FetchStage::operator()()
 {
@@ -31,7 +33,7 @@ void Pipe::FetchStage::operator()()
     if(M.icode==JXX&&!M.Cnd)
     {
         pc=M.valA;
-        //TODO:Mispredicted branch
+        //Mispredicted branch
     }
     else if(W.icode==RET)
         pc=W.valM;
@@ -39,17 +41,26 @@ void Pipe::FetchStage::operator()()
 
     if(pc>=iMemSize)
     {
-        //TODO:ADR
+        stat=ADR;
+        return;
     }
     else tie(icode,ifun)=readTwoHex(iMem+pc);
 
     if(!insValidQ(icode,ifun))
     {
-        //TODO:INS
+        stat=INS;
+        return;
     }
     else if(pc+SIZEOF[combine(icode,ifun)]>iMemSize)
     {
-        //TODO:ADR
+        stat=ADR;
+        return;
+    }
+
+    if(icode==HALT)
+    {
+        stat=HALT;
+        return;
     }
 
     //read detail-reg
@@ -59,27 +70,30 @@ void Pipe::FetchStage::operator()()
         case RMMOVQ:
         case MRMOVQ:
         case OPQ:
-        tie(rA,rB)=readTwoHex(INS+1);
+        tie(rA,rB)=readTwoHex(Ins+1);
         if(rA>=RFN||rB>=RFN)
         {
-            //TODO:INS
+            stat=INS;
+            return;
         }
         break;
 
         case PUSHQ:
         case POPQ:
-        tie(rA,rB)=readTwoHex(INS+1);
+        tie(rA,rB)=readTwoHex(Ins+1);
         if(rA>=RFN||rB!=RNONE)
         {
-            //TODO:INS
+            stat=INS;
+            return;
         }
         break;
 
         case IRMOVQ:
-        tie(rA,rB)=readTwoHex(INS+1);
+        tie(rA,rB)=readTwoHex(Ins+1);
         if(rA!=RNONE||rB>=RFN)
         {
-            //TODO:INS
+            stat=INS;
+            return;
         }
         break;
     }
@@ -91,12 +105,12 @@ void Pipe::FetchStage::operator()()
         case IRMOVQ:
         case RMMOVQ:
         case MRMOVQ:
-        valC=readQword(INS,2);
+        valC=readQword(Ins,2);
         break;
         
         case JXX:
         case CALL:
-        valC=readQword(INS,1);
+        valC=readQword(Ins,1);
         break;
     }
 
@@ -135,18 +149,49 @@ void Pipe::FetchStage::operator()()
 
 void Pipe::FBuf::operator()()
 {
-    predPc=f.predPc;
+    if(Condition[BUBBLE])
+    {
+        assert(false); //本程序编写正确不会出现此情况
+    }
+
+    if(Condition[STALL])
+    {
+        predPc=NOP;
+    }
+    else
+    {
+        predPc=f.predPc;
+    }
+    memset(Condition,0,sizeof(Condition));
 }
 
 void Pipe::DBuf::operator()()
 {
-    stat=f.stat;
-    icode=f.icode;
-    ifun=f.ifun;
-    rA=f.rA;
-    rB=f.rB;
-    valC=f.valC;
-    valP=f.valP;
+    if(Condition[STALL]) //双
+    {
+        stat=AOK;
+        icode=NOP;
+        ifun=FN::TRUE;
+        rA=RNONE;
+        rB=RNONE;
+        valC=0;
+        valP=0;
+    }
+    else if(Condition[BUBBLE])
+    {
+        //pass
+    }
+    else
+    {
+        stat=f.stat;
+        icode=f.icode;
+        ifun=f.ifun;
+        rA=f.rA;
+        rB=f.rB;
+        valC=f.valC;
+        valP=f.valP;
+    }
+    memset(Condition,0,sizeof(Condition));
 }
 
 void Pipe::DecodeStage::operator()()
@@ -199,11 +244,17 @@ void Pipe::DecodeStage::operator()()
 
 void Pipe::DecodeStage::forward(Qword &val, Byte src)
 {
-    if(src==RNONE) return;
+    //此处有说明，forward只需要在一个cycle的结束前完成即可
+    //虽然使用了小写阶段的信息但是可以保证正确性
+    //在线性模拟中把d放在e后
 
     if(icode==CALL||icode==JXX)
     {
         val=D.valP;
+    }
+    else if (src==RNONE)
+    {
+        return;
     }
     else if(src==e.dstE)
     {
@@ -233,16 +284,28 @@ void Pipe::DecodeStage::forward(Qword &val, Byte src)
 
 void Pipe::Ebuf::operator()()
 {
-    stat=d.stat;
-    icode=d.icode;
-    ifun=d.ifun;
-    valC=d.valC;
-    valA=d.valA;
-    valB=d.valB;
-    dstE=d.dstE;
-    dstM=d.dstM;
-    srcA=d.srcA;
-    srcB=d.srcB;
+    if(Condition[STALL])
+    {
+        assert(false);//程序正确不会出现这种情况
+    }
+    if(Condition[BUBBLE])
+    {
+        //pass
+    }
+    else
+    {
+        stat=d.stat;
+        icode=d.icode;
+        ifun=d.ifun;
+        valC=d.valC;
+        valA=d.valA;
+        valB=d.valB;
+        dstE=d.dstE;
+        dstM=d.dstM;
+        srcA=d.srcA;
+        srcB=d.srcB;
+    }
+    memset(Condition,0,sizeof(Condition));
 }
 
 void Pipe::ExcuteStage::operator()()
@@ -254,9 +317,6 @@ void Pipe::ExcuteStage::operator()()
     switch(icode)
     {
         case HALT:
-        stat=HLT;
-        break;
-
         case NOP:
         //pass
         break;
@@ -296,6 +356,8 @@ void Pipe::ExcuteStage::operator()()
 
     dstE=(icode==JXX&&!Cnd)?RNONE:E.dstE;
     dstM=E.dstM;
+
+    
 }
 
 void Pipe::ExcuteStage::setCnd(Byte ifun)
@@ -377,6 +439,8 @@ Qword Pipe::ExcuteStage::ALU(Qword valA, Qword valB, Byte ifun)
 
 void Pipe::MBuf::operator()()
 {
+    if(Condition[STALL]||Condition[BUBBLE]) assert(false); //程序编写正确不会出现这种情况
+
     stat=e.stat;
     icode=e.icode;
     Cnd=e.icode;
@@ -411,7 +475,8 @@ void Pipe::MemoryStage::operator()()
         case CALL:
         if(M.valE+8>MemSize)
         {
-            //TODO:ADR
+            stat=ADR;
+            return;
         }
         write(Mem,M.valA,M.valE);
         break;
@@ -419,7 +484,8 @@ void Pipe::MemoryStage::operator()()
         case MRMOVQ:
         if(M.valE+8>MemSize)
         {
-            //TODO:ADR
+            stat=ADR;
+            return;
         }
         valM=readQword(Mem,M.valE);
         break;
@@ -428,7 +494,8 @@ void Pipe::MemoryStage::operator()()
         case RET:
         if(M.valA+8>MemSize)
         {
-            //TODO:ADR
+            stat=ADR;
+            return;
         }
         valM=readQword(Mem,M.valA);
         break;
@@ -437,6 +504,8 @@ void Pipe::MemoryStage::operator()()
 
 void Pipe::WBuf::operator()()
 {
+    if(Condition[STALL]||Condition[BUBBLE]) assert(false); //程序编写正确不会出现这种情况
+
     stat=m.stat;
     icode=m.icode;
     valE=m.valE;
@@ -451,4 +520,50 @@ void Pipe::WriteBackStage::operator()()
     
     if(W.dstE!=RNONE) RF[W.dstE]=W.valE;
     if(W.dstM!=RNONE) RF[W.dstM]=W.valM;
+}
+
+Pipe::Pipe(Byte *_Mem, size_t _MemSize, Byte *_iMem, size_t _iMemSize)
+{
+    Mem=_Mem;
+    MemSize=_MemSize;
+    iMem=_iMem;
+    iMemSize=_iMemSize;
+}
+
+
+void Pipe::run()
+{
+    size_t cycle = 0;
+    while (Stat==AOK&&f.stat==AOK&&d.stat==AOK&&e.stat==AOK&&m.stat==AOK)
+    {
+        cycle++;
+    //以下5个buf阶段可并行
+        F();
+        D();
+        E();
+        M();
+        W();
+
+    //以下5个阶段时钟模拟下可并行真实时钟模拟可并行
+        f();
+        e(); //使用线性模拟并行，e要放在d前保证forward
+        d();
+        m();
+        w();
+
+        hazardDetect();
+    }
+    
+}
+
+void Pipe::hazardDetect()
+{
+    bool processingRet = (d.icode==RET||e.icode==RET||m.icode==RET);
+    bool mispredictedBranch= (M.icode==JXX&&!M.Cnd);
+    bool loadUseHazard = (E.icode==IRMOVQ||E.icode==POPQ)&&(E.dstM==d.srcA||E.dstM==d.srcB);
+    
+    F.Condition[STALL]=processingRet||loadUseHazard;
+    D.Condition[BUBBLE]=processingRet||mispredictedBranch;
+    D.Condition[STALL]=loadUseHazard;
+    E.Condition[BUBBLE]=loadUseHazard||mispredictedBranch;
 }

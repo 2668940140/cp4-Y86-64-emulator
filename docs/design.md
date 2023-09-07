@@ -96,16 +96,26 @@ pc预测:为了循环起来，需要预测，本书采取简单的下一个pc=va
 固定fetch的pc
 
 ## PIPE:
- forward解决依赖问题:提前传过去修改后的数（不能解决还没有读取/算出来的数的情况）
+forward解决依赖问题:提前传过去修改后的数（不能解决还没有读取/算出来的数的情况）
 需要增加额外的数据连接和控制逻辑
 
-stall+forward解决还没有读取/算出来的数的情况
+stall+forward解决还没有读取/算出来的数的情况z
 
 control hazard:跑了预测错误的指令
 指令最早在excute阶段才能修改状态(CC),发现跑错了在excute插入bubble直到错误指令消失
 
 ![[Pasted image 20230830124029.png]]
 ![[Pasted image 20230830145917.png]]
+
+
+## Pipeline Control Logic:
+Load/Use hazards:在使用还没有读取的数据时需要bubble 1cycle
+Processing ret:处理ret时需要stall到ret到write back
+Mispredicted branches:cancel错走的几个指令,fetch jump之后的
+错走的指令是invalid处理:
+Exceptions:保证这条指令之前的所有可见状态更改，保证这条指令及之后所有指令不修改可见状态
+
+
 # 异常处理
  内部异常:
 1. halt
@@ -116,3 +126,9 @@ control hazard:跑了预测错误的指令
 signals
 
 在更完整的设计中应调用异常处理程序
+
+![[Pasted image 20230907155735.png]]
+![[Pasted image 20230907162551.png]]
+![[Pasted image 20230907162608.png]]
+![[Pasted image 20230907155824.png]]
+总结，按位处理stall优先
