@@ -29,6 +29,7 @@ using namespace MCodeMapSpace;
 
 void Pipe::FetchStage::operator()()
 {
+    if(stat!=AOK) return;
     //select pc
     if(M.icode==JXX&&!M.Cnd)
     {
@@ -59,7 +60,7 @@ void Pipe::FetchStage::operator()()
 
     if(icode==HALT)
     {
-        stat=HALT;
+        stat=HLT;
         return;
     }
 
@@ -86,6 +87,9 @@ void Pipe::FetchStage::operator()()
             stat=INS;
             return;
         }
+
+        case CALL:
+        rB=RSP;
         break;
 
         case IRMOVQ:
@@ -95,6 +99,10 @@ void Pipe::FetchStage::operator()()
             stat=INS;
             return;
         }
+        break;
+
+        case RET:
+        rA=rB=RSP;
         break;
     }
 
@@ -141,7 +149,7 @@ void Pipe::FetchStage::operator()()
         valP=pc+10;
         break;
     }
-    
+
     predPc=(icode==JXX||icode==CALL)?valC:valP;
     
     return;
@@ -156,7 +164,7 @@ void Pipe::FBuf::operator()()
 
     if(Condition[STALL])
     {
-        predPc=NOP;
+        //pass 
     }
     else
     {
@@ -167,7 +175,12 @@ void Pipe::FBuf::operator()()
 
 void Pipe::DBuf::operator()()
 {
+    if(stat!=AOK) return;
     if(Condition[STALL]) //双
+    {
+        //pass
+    }
+    else if(Condition[BUBBLE])
     {
         stat=AOK;
         icode=NOP;
@@ -176,10 +189,6 @@ void Pipe::DBuf::operator()()
         rB=RNONE;
         valC=0;
         valP=0;
-    }
-    else if(Condition[BUBBLE])
-    {
-        //pass
     }
     else
     {
@@ -201,6 +210,7 @@ void Pipe::DecodeStage::operator()()
     ifun=D.ifun;
     valC=D.valC;
     srcA=D.rA;srcB=D.rB;
+    if(stat!=AOK) return;
 
     //储存这些信息为了之后可能的forward
     switch(icode)
@@ -248,7 +258,7 @@ void Pipe::DecodeStage::forward(Qword &val, Byte src)
     //虽然使用了小写阶段的信息但是可以保证正确性
     //在线性模拟中把d放在e后
 
-    if(icode==CALL||icode==JXX)
+    if((icode==CALL||icode==JXX) && &val==&valA)
     {
         val=D.valP;
     }
@@ -284,13 +294,23 @@ void Pipe::DecodeStage::forward(Qword &val, Byte src)
 
 void Pipe::Ebuf::operator()()
 {
+    if(stat!=AOK) return;
     if(Condition[STALL])
     {
         assert(false);//程序正确不会出现这种情况
     }
     if(Condition[BUBBLE])
     {
-        //pass
+        stat=AOK;
+        icode=NOP;
+        ifun=FN::TRUE;
+        valC=0;
+        valA=0;
+        valB=0;
+        dstE=RNONE;
+        dstM=RNONE;
+        srcA=RNONE;
+        srcB=RNONE;
     }
     else
     {
@@ -313,6 +333,7 @@ void Pipe::ExcuteStage::operator()()
     stat=E.stat;
     icode=E.icode;
     valA=E.valA;
+    if(stat!=AOK) return;
 
     switch(icode)
     {
@@ -439,11 +460,12 @@ Qword Pipe::ExcuteStage::ALU(Qword valA, Qword valB, Byte ifun)
 
 void Pipe::MBuf::operator()()
 {
+    if(stat!=AOK) return;
     if(Condition[STALL]||Condition[BUBBLE]) assert(false); //程序编写正确不会出现这种情况
 
     stat=e.stat;
     icode=e.icode;
-    Cnd=e.icode;
+    Cnd=e.Cnd;
     valE=e.valE;
     valA=e.valA;
     dstE=e.dstE;
@@ -457,7 +479,7 @@ void Pipe::MemoryStage::operator()()
     valE=M.valE;
     dstE=M.dstE;
     dstM=M.dstM;
-
+    if(stat!=AOK) return;
     switch(icode)
     {
         case HALT:
@@ -491,6 +513,9 @@ void Pipe::MemoryStage::operator()()
         break;
 
         case POPQ:
+        valM=readQword(Mem,M.valE-8);
+        break;
+
         case RET:
         if(M.valA+8>MemSize)
         {
@@ -500,10 +525,12 @@ void Pipe::MemoryStage::operator()()
         valM=readQword(Mem,M.valA);
         break;
     }
+    return ;
 }
 
 void Pipe::WBuf::operator()()
 {
+    if(stat!=AOK) return;
     if(Condition[STALL]||Condition[BUBBLE]) assert(false); //程序编写正确不会出现这种情况
 
     stat=m.stat;
@@ -516,7 +543,9 @@ void Pipe::WBuf::operator()()
 
 void Pipe::WriteBackStage::operator()()
 {
+
     Stat=(W.stat==BUB)?AOK:W.stat;
+    if(Stat!=AOK) return;
     
     if(W.dstE!=RNONE) RF[W.dstE]=W.valE;
     if(W.dstM!=RNONE) RF[W.dstM]=W.valM;
@@ -531,29 +560,30 @@ Pipe::Pipe(Byte *_Mem, size_t _MemSize, Byte *_iMem, size_t _iMemSize)
 }
 
 
-void Pipe::run()
+Byte Pipe::run()
 {
     size_t cycle = 0;
-    while (Stat==AOK&&f.stat==AOK&&d.stat==AOK&&e.stat==AOK&&m.stat==AOK)
+
+    while (Stat==AOK)
     {
         cycle++;
-    //以下5个buf阶段可并行
+    //以下5个阶段时钟模拟下可并行真实时钟模拟可并行
+        M();
+        hazardDetect(); //检测misdirected branch
         F();
         D();
         E();
-        M();
         W();
 
     //以下5个阶段时钟模拟下可并行真实时钟模拟可并行
         f();
         e(); //使用线性模拟并行，e要放在d前保证forward
+        m(); //要放在d前保证forward
         d();
-        m();
         w();
-
-        hazardDetect();
     }
-    
+
+    return Stat;
 }
 
 void Pipe::hazardDetect()
@@ -562,6 +592,11 @@ void Pipe::hazardDetect()
     bool mispredictedBranch= (M.icode==JXX&&!M.Cnd);
     bool loadUseHazard = (E.icode==IRMOVQ||E.icode==POPQ)&&(E.dstM==d.srcA||E.dstM==d.srcB);
     
+    if(processingRet||mispredictedBranch)
+    {
+        f.stat=AOK;
+    }
+
     F.Condition[STALL]=processingRet||loadUseHazard;
     D.Condition[BUBBLE]=processingRet||mispredictedBranch;
     D.Condition[STALL]=loadUseHazard;

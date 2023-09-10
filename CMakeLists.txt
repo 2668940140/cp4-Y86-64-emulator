@@ -6,8 +6,8 @@ add_executable(testcpp
     src/test/test.cpp
 )
 
-project(assemblerSeqDoFibTest LANGUAGES C CXX)
-add_compile_options(-g)
+
+
 include_directories(assemblerSeqDoFibTest headers)
 add_executable(assemblerSeqDoFibTest 
 src/test/test1.cpp
@@ -17,10 +17,12 @@ src/Asm.cpp
 )
 add_test(NAME assemblerSeqDoFibTest COMMAND assemblerSeqDoFibTest 10)  #计算fib10，注意采用全递归，测试数太大可能爆栈
 
-project(pipeTest LANGUAGES C CXX)
-include_directories(pipeTest headers)
-add_executable(pipeTest
-src/utilities.cpp
-src/pipeTest.cpp
+include_directories(assemblerPipeDoFibTest headers)
+add_executable(assemblerPipeDoFibTest 
+src/test/test2.cpp
 src/Pipe.cpp
+src/utilities.cpp
+src/Asm.cpp
 )
+
+add_test(NAME assemblerPipeDoFibTest COMMAND assemblerPipeDoFibTest 10)  #计算fib10，注意采用全递归，测试数太大可能爆栈W

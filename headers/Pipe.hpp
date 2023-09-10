@@ -1,13 +1,11 @@
 #pragma once
 #include "def.hpp"
-/// @brief TODO:初始化,在e检测LOAD/USE HARZARD,实现control logic
 class Pipe : public StateDef
 {
-
 public:
 Pipe(Byte* _Mem, size_t _MemSize, Byte* _iMem, size_t _iMemSize);
 
-void run();
+Byte run();
 
 private:
 enum {STALL,BUBBLE};

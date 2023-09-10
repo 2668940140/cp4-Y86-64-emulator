@@ -1,4 +1,4 @@
-#include "Seq.hpp"
+#include "Pipe.hpp"
 #include "Asm.hpp"
 #include "utilities.hpp"
 #include <sstream>
@@ -40,7 +40,7 @@ ret)";
 #define SIZE 524288
 Byte Mem[SIZE];
 Byte Ins[SIZE];
-Seq seq(Ins,Mem,SIZE);
+Pipe pipe(Mem,SIZE,Ins,SIZE);
 
 using namespace std;
 using namespace Utl;
@@ -53,11 +53,11 @@ Qword function(Qword x)
 }
 
 int main(int argc, char** argv){
-    Qword input = strtoull(argv[1],nullptr,0);
+    Qword input = strtoull("10",nullptr,0);
     stringstream ss(src);
     write(Mem,input);
     if(!Y86_64Assembler(Ins,SIZE,ss)) return -1;
-    if(seq.run()!=Seq::HLT) return -1;
+    if(pipe.run()!=Pipe::HLT) return -1;
     Qword ans = readQword(Mem);
     if(ans!=function(input)) return -1;
     return 0;
