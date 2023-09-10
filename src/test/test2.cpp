@@ -53,7 +53,7 @@ Qword function(Qword x)
 }
 
 int main(int argc, char** argv){
-    Qword input = strtoull("10",nullptr,0);
+    Qword input = strtoull(argv[1],nullptr,0);
     stringstream ss(src);
     write(Mem,input);
     if(!Y86_64Assembler(Ins,SIZE,ss)) return -1;
